@@ -1,0 +1,10 @@
+D:\Users\Antonio\Desktop\mouse\serverMio\Server\Server\bin\Debug\Server.exe.config
+D:\Users\Antonio\Desktop\mouse\serverMio\Server\Server\bin\Debug\Server.exe
+D:\Users\Antonio\Desktop\mouse\serverMio\Server\Server\bin\Debug\Server.pdb
+D:\Users\Antonio\Desktop\mouse\serverMio\Server\Server\obj\Debug\Server.csprojAssemblyReference.cache
+D:\Users\Antonio\Desktop\mouse\serverMio\Server\Server\obj\Debug\Server.ServerForm.resources
+D:\Users\Antonio\Desktop\mouse\serverMio\Server\Server\obj\Debug\Server.Properties.Resources.resources
+D:\Users\Antonio\Desktop\mouse\serverMio\Server\Server\obj\Debug\Server.csproj.GenerateResource.cache
+D:\Users\Antonio\Desktop\mouse\serverMio\Server\Server\obj\Debug\Server.csproj.CoreCompileInputs.cache
+D:\Users\Antonio\Desktop\mouse\serverMio\Server\Server\obj\Debug\Server.exe
+D:\Users\Antonio\Desktop\mouse\serverMio\Server\Server\obj\Debug\Server.pdb
