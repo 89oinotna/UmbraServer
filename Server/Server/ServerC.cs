@@ -104,21 +104,26 @@ namespace Server
                 }
 
                 //wheel
-                else if (data.StartsWith("wheel") && connected) {
-                    Console.WriteLine(data);
-                    String val = data.Split(',')[1];
-                    this.SendWheelScroll(Int32.Parse(val));
+                else if (data.EndsWith("wheel") && connected) {
+                    float val;
+
+                    if (float.TryParse(data.Split(',')[0], out val))
+                    {
+                        int delta = (int)val;
+                        this.SendWheelScroll(delta);
+                    }
+
                 }
 
                 //holding click
                 else if (data.StartsWith("hold") && connected)
                 {
                     Console.WriteLine(data);
-                    holding = true;
+                    this.holding = true;
                     mouse_event((int)MouseEventFlagsAPI.LEFTDOWN, 0, 0, 0, 0);
                 }
                 else if(data.StartsWith("endhold") && connected) {
-                    holding = false;
+                    this.holding = false;
                     Console.WriteLine(data);
                     mouse_event((int)MouseEventFlagsAPI.LEFTUP, 0, 0, 0, 0);
 
@@ -174,7 +179,9 @@ namespace Server
         private void SendWheelScroll(int val)
         {
             // Send click to system
-            mouse_event((int)MouseEventFlagsAPI.WHEEL, 0, 0, 120, 0);
+
+            Console.WriteLine(val.ToString());
+            mouse_event((int)MouseEventFlagsAPI.WHEEL, 0, 0, val, 0);
         }
 
     }
