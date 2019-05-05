@@ -35,6 +35,7 @@ namespace Server
         }
 
         private bool connected = false;
+        private bool open = false;
         private UdpClient _server = new UdpClient(4511);
         private string connectedIp;
         private string data = "";
@@ -43,6 +44,7 @@ namespace Server
         private IPEndPoint RemoteIp = new IPEndPoint(IPAddress.Any, 0);
         public void StartListening() {
             try {
+                open = true;
                 _server.BeginReceive(new AsyncCallback(recv), null);
             }
             catch (Exception e) {
@@ -52,7 +54,8 @@ namespace Server
         public void EndListening()
         {
                 connected = false;
-                _server.Close();
+                open = false;
+                //_server.Close();
             
         }
 
@@ -62,8 +65,14 @@ namespace Server
       
 
         void recv(IAsyncResult res) {
-            
+
+
             byte[] received = _server.EndReceive(res, ref RemoteIp);
+            if (!open)
+            {
+                _server.Close();
+                return;
+            }
             if (connected && RemoteIp.Address.ToString()!=connectedIp) {
                 return;
             }
@@ -168,7 +177,7 @@ namespace Server
                 Console.Write(data);
             }
 
-            //MessageBox.Show("received" + data + RemoteIp.ToString());
+            
             _server.BeginReceive(new AsyncCallback(recv), null);
             
         }
