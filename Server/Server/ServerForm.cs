@@ -13,6 +13,7 @@ namespace Server
     public partial class ServerForm : Form
     {
         ServerC s = new ServerC();
+        bool started = false;
         public ServerForm()
         {
             InitializeComponent();
@@ -21,9 +22,21 @@ namespace Server
 
         private void Button1_Click(object sender, EventArgs e)
         {
-            
-            s.StartListening();
-            button1.Text = "stop";
+
+            if (s.isConnected()) {
+                s.EndListening();
+            }
+            else {
+                s.StartListening();
+            }
+            if (started){
+                started = false;
+                button1.Text = "Start";
+            }
+            else {
+                started = true;
+                button1.Text = "Stop";
+            }
         }
 
         private void Button2_Click(object sender, EventArgs e)

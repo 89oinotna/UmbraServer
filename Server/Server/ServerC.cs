@@ -13,7 +13,7 @@ using System.Drawing;
 
 namespace Server
 {
-    
+
     public class ServerC
     {
         [DllImport("user32.dll")]
@@ -34,7 +34,7 @@ namespace Server
             RIGHTUP = 0x00000010
         }
 
-        private bool connected=false;
+        private bool connected = false;
         private UdpClient _server = new UdpClient(4511);
         private string connectedIp;
         private string data = "";
@@ -49,7 +49,16 @@ namespace Server
                 MessageBox.Show(e.Message.ToString());
             }
         }
+        public void EndListening()
+        {
+                connected = false;
+                _server.Close();
+            
+        }
 
+        public bool isConnected(){
+            return connected;
+        }
       
 
         void recv(IAsyncResult res) {
@@ -68,7 +77,7 @@ namespace Server
                 //broadcast
                 if (data.StartsWith("broad")) {
                     //if connected check if client active
-                    if ((connected && connectedIp == RemoteIp.Address.ToString()) || !connected)
+                    if (!connected || (connected && connectedIp == RemoteIp.Address.ToString()) )
                     {
                         connected = false;
                         Console.WriteLine(RemoteIp.Address.ToString());
@@ -136,18 +145,19 @@ namespace Server
                 }
 
                 // Otherwise move
-                else
+                else if ((data.EndsWith("move")|| data.EndsWith("holding")) && connected)
                 {
-                    if (connected) {
                         // calculate delta
                         String[] delta = data.Split(',');
-
-                        float deltaX = float.Parse(delta[0]) * this.speed;
-                        float deltaY = float.Parse(delta[1]) * this.speed;
-                        // set new point
-                        Cursor.Position = new Point(Cursor.Position.X + (int)deltaX, Cursor.Position.Y + (int)deltaY);
+                    Console.WriteLine(data);
+                    int deltaX = int.Parse(delta[0]);
+                    Console.WriteLine(deltaX);
+                    int deltaY = int.Parse(delta[1]);
+                    // set new point
+                    
+                    Cursor.Position = new Point(Cursor.Position.X + deltaX, Cursor.Position.Y + deltaY);
                         
-                    }
+                    
 
 
                 }
@@ -165,6 +175,7 @@ namespace Server
 
         private void SendClick()
         {
+            Console.WriteLine(data);
             // Send click to system
             mouse_event((int)MouseEventFlagsAPI.LEFTDOWN, 0, 0, 0, 0);
             mouse_event((int)MouseEventFlagsAPI.LEFTUP, 0, 0, 0, 0);
@@ -180,7 +191,7 @@ namespace Server
         {
             // Send click to system
 
-            Console.WriteLine(val.ToString());
+            Console.WriteLine(data);
             mouse_event((int)MouseEventFlagsAPI.WHEEL, 0, 0, val, 0);
         }
 
