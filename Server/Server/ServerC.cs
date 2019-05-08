@@ -90,7 +90,7 @@ namespace Server
                     {
                         connected = false;
                         Console.WriteLine(RemoteIp.Address.ToString());
-                        Byte[] sendBytes = Encoding.ASCII.GetBytes("server");
+                        Byte[] sendBytes = Encoding.ASCII.GetBytes("server:"+ Environment.MachineName);
                         UdpClient _client = new UdpClient(RemoteIp.Address.ToString(), 4512);
                         _client.Send(sendBytes, sendBytes.Length);
                     }
