@@ -18,6 +18,32 @@ namespace Server
     {
         [DllImport("user32.dll")]
         static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo);
+       
+
+        internal struct Rect
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+
+        internal struct GuiThreadInfo
+        {
+            public int cbSize;
+            public uint flags;
+            public IntPtr hwndActive;
+            public IntPtr hwndFocus;
+            public IntPtr hwndCapture;
+            public IntPtr hwndMenuOwner;
+            public IntPtr hwndMoveSize;
+            public IntPtr hwndCaret;
+            public Rect rcCaret;
+        }
+
+        [DllImport("user32.dll", EntryPoint = "GetGUIThreadInfo")]
+        internal static extern bool GetGUIThreadInfo(uint idThread, ref GuiThreadInfo threadInfo);
 
         // Flags for mouse_event api
         [Flags]
@@ -39,7 +65,7 @@ namespace Server
         private UdpClient _server = new UdpClient(4511);
         private string connectedIp;
         private string data = "";
-        private float speed = 0.4f;
+        //private float speed = 0.4f;
         private bool holding = false;
         private IPEndPoint RemoteIp = new IPEndPoint(IPAddress.Any, 0);
         public void StartListening() {
@@ -84,19 +110,20 @@ namespace Server
             {
 
                 //broadcast
-                if (data.StartsWith("broad")) {
+                if (data.StartsWith("broad"))
+                {
                     //if connected check if client active
-                    if (!connected || (connected && connectedIp == RemoteIp.Address.ToString()) )
+                    if (!connected || (connected && connectedIp == RemoteIp.Address.ToString()))
                     {
                         connected = false;
                         Console.WriteLine(RemoteIp.Address.ToString());
-                        Byte[] sendBytes = Encoding.ASCII.GetBytes("server:"+ Environment.MachineName);
-                        UdpClient _client = new UdpClient(RemoteIp.Address.ToString(), 4512);
-                        _client.Send(sendBytes, sendBytes.Length);
+                        
+                        sendMessage(RemoteIp.Address.ToString(), "server:");
                     }
                 }
                 //connection
-                else if (data.StartsWith("conn") && !connected) {
+                else if (data.StartsWith("conn") && !connected)
+                {
 
                     connectedIp = RemoteIp.Address.ToString();
                     connected = true;
@@ -104,7 +131,14 @@ namespace Server
 
                 // click
                 else if (data.StartsWith("click") && connected)
+                {
                     this.SendClick();
+                    if (GetFocusedHandle().ToInt32() != 0) {
+                        sendMessage(RemoteIp.Address.ToString(), "tastiera");
+                    }
+                    
+                    
+                }
 
                 // long click = double click
                 else if (data.StartsWith("d.click") && connected)
@@ -122,7 +156,8 @@ namespace Server
                 }
 
                 //wheel
-                else if (data.EndsWith("wheel") && connected) {
+                else if (data.EndsWith("wheel") && connected)
+                {
                     float val;
 
                     if (float.TryParse(data.Split(',')[0], out val))
@@ -140,7 +175,8 @@ namespace Server
                     this.holding = true;
                     mouse_event((int)MouseEventFlagsAPI.LEFTDOWN, 0, 0, 0, 0);
                 }
-                else if(data.StartsWith("endhold") && connected) {
+                else if (data.StartsWith("endhold") && connected)
+                {
                     this.holding = false;
                     Console.WriteLine(data);
                     mouse_event((int)MouseEventFlagsAPI.LEFTUP, 0, 0, 0, 0);
@@ -148,25 +184,26 @@ namespace Server
                 }
 
                 //disconnection
-                else if (data.StartsWith("disconn") && connected) {
+                else if (data.StartsWith("disconn") && connected)
+                {
                     Console.WriteLine(data);
                     this.connected = false;
                 }
 
                 // Otherwise move
-                else if ((data.EndsWith("move")|| data.EndsWith("holding")) && connected)
+                else if ((data.EndsWith("move") || data.EndsWith("holding")) && connected)
                 {
-                        // calculate delta
-                        String[] delta = data.Split(',');
+                    // calculate delta
+                    String[] delta = data.Split(',');
                     Console.WriteLine(data);
                     int deltaX = int.Parse(delta[0]);
                     Console.WriteLine(deltaX);
                     int deltaY = int.Parse(delta[1]);
                     // set new point
-                    
+
                     Cursor.Position = new Point(Cursor.Position.X + deltaX, Cursor.Position.Y + deltaY);
-                        
-                    
+
+
 
 
                 }
@@ -180,6 +217,15 @@ namespace Server
             
             _server.BeginReceive(new AsyncCallback(recv), null);
             
+        }
+
+        static IntPtr GetFocusedHandle()
+        {
+            var info = new GuiThreadInfo();
+            info.cbSize = Marshal.SizeOf(info);
+            if (!GetGUIThreadInfo(0, ref info))
+                throw new Exception();
+            return info.hwndFocus;
         }
 
         private void SendClick()
@@ -202,6 +248,12 @@ namespace Server
 
             Console.WriteLine(data);
             mouse_event((int)MouseEventFlagsAPI.WHEEL, 0, 0, val, 0);
+        }
+
+        public void sendMessage(String ip, String message) {
+            Byte[] sendBytes = Encoding.ASCII.GetBytes("message" + Environment.MachineName);
+            UdpClient _client = new UdpClient(ip, 4512);
+            _client.Send(sendBytes, sendBytes.Length);
         }
 
     }
