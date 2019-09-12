@@ -46,6 +46,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Mouse.cs" />
     <Compile Include="ServerC.cs" />
     <Compile Include="ServerForm.cs">
       <SubType>Form</SubType>
