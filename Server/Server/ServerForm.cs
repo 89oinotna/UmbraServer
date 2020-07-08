@@ -38,7 +38,8 @@ namespace Server
                 if (k != null && usePassword) {
                     s.usePassword(k, base64k);
                 }
-                s.StartListening();
+                s.StartListeningUdp();
+                s.StartListeningTcp();
                 btn_start.Text = "Stop";
             }
             else if (s == null || !s.Started) {
@@ -47,7 +48,8 @@ namespace Server
                 {
                     s.usePassword(k, base64k);
                 }
-                s.StartListening();
+                s.StartListeningUdp();
+                s.StartListeningTcp();
                 btn_start.Text = "Stop";
             }
         }

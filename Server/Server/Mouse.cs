@@ -1,15 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Threading;
-using System.Runtime.InteropServices;
-
-
-using System.Windows.Forms;
 using System.Drawing;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Windows.Forms;
 
 
 namespace Server
@@ -60,6 +53,11 @@ namespace Server
                 mouse_event((int)MouseEventFlagsAPI.RIGHTUP, 0, 0, 0, 0);
             }
             else if (received[0] == WHEEL_MOVE){
+                String data = Encoding.UTF8.GetString(received);
+                String[] delta = data.Split(':', ',');
+                //Console.WriteLine(deltaX);
+                int y = int.Parse(delta[2]);
+                mouse_event((int)MouseEventFlagsAPI.WHEEL, 0, 0, y, 0);
             }
             else if (received[0] == PAD_MOVE){
                 // calculate delta

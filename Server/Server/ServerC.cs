@@ -16,6 +16,7 @@ using ZXing.QrCode;
 using ZXing.Common;
 using System.Security;
 using System.Security.Cryptography;
+using System.IO;
 
 namespace Server
 {
@@ -35,10 +36,13 @@ namespace Server
                 this.started = value;
             }
         }
-        private UdpClient serverUdp = new UdpClient(4511);
-        private TcpClient
+        private UdpClient serverUdp = new UdpClient(4513);
         private string connectedIp;
         private string data = "";
+        private TcpListener listener = null;
+        private TcpClient clientTcp = null;
+        private NetworkStream netStream = null;
+
         Mouse mouse = new Mouse();
 
         private static byte BROADCAST = 0x00;
@@ -52,8 +56,6 @@ namespace Server
         //connection request
         public static byte CONNECTION = 0x04;
         public static byte CONNECTION_PASSWORD = 0x05;
-        public static byte DISCONNECT = 0x06;
-        public static byte DISCONNECT_PASSWORD = 0x07;
 
         //response
         public static byte CONNECTION_ERROR = 0x04;
@@ -70,11 +72,15 @@ namespace Server
         public void close()
         {
             serverUdp.Close();
+            listener.Stop();
             connected = false;
             started = false;
+            connectedIp = null;
+            netStream.Close();
+            clientTcp.Close();
         }
 
-        public void StartListening() {
+        public void StartListeningUdp() {
             try {
                 serverUdp.BeginReceive(new AsyncCallback(recv), null);
                 started = true;
@@ -106,8 +112,7 @@ namespace Server
 
             try {
                 //broadcast
-                if (received[0] == BROADCAST)
-                {
+                if (received[0] == BROADCAST) {
                     //if connected check if client active
                     //if (!connected || (connected && connectedIp == RemoteIp.Address.ToString()))
                     //{
@@ -115,46 +120,6 @@ namespace Server
                     Console.WriteLine(RemoteIp.Address.ToString());
                     sendAlive();
                     //}
-                }
-                //connection
-                else if ((received[0] == CONNECTION || received[0] == CONNECTION_PASSWORD) /*&& !connected*/)
-                {
-
-                    if (received[0] == CONNECTION_PASSWORD)
-                    {
-                        if (!usingPassword)
-                        {
-                            sendMessage(RemoteIp.Address.ToString(), CONNECTION_ERROR);
-                        }
-                        else
-                        {
-                            ICryptoTransform decryptor = crypto.CreateDecryptor(crypto.Key, crypto.IV);
-                            var origValue = decryptor.TransformFinalBlock(received, 1, received.Length - 1);
-                            if (base64Key.Equals(Encoding.ASCII.GetString(origValue).Split(':')[1]))
-                            {
-                                connectedIp = RemoteIp.Address.ToString();
-                                connected = true;
-                                sendMessage(RemoteIp.Address.ToString(), CONNECTED_PASSWORD);
-                            }
-                            else
-                            {
-                                sendMessage(RemoteIp.Address.ToString(), WRONG_PASSWORD);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (usingPassword)
-                        {
-                            sendMessage(RemoteIp.Address.ToString(), REQUIRE_PASSWORD);
-                        }
-                        else
-                        {
-                            connectedIp = RemoteIp.Address.ToString();
-                            connected = true;
-                            sendMessage(RemoteIp.Address.ToString(), CONNECTED);
-                        }
-                    }
                 }
 
                 /*else if ((received[0] == CONNECTION || received[0] == CONNECTION_PASSWORD) && connected) {
@@ -182,10 +147,6 @@ namespace Server
                     }
                 }
 
-                else if ((received[0] == DISCONNECT || received[0] == DISCONNECT_PASSWORD) && connected) {
-                    //TODO: separare i casi
-                    connected = false;
-                }
                 
             }
             catch (Exception e)
@@ -215,25 +176,158 @@ namespace Server
             sendBytes=sendBytes.Concat(Encoding.ASCII.GetBytes(":")).Concat(Encoding.ASCII.GetBytes(Environment.MachineName)).ToArray();
             UdpClient client = new UdpClient(RemoteIp.Address.ToString(), 4513);
             client.Send(sendBytes, sendBytes.Length);
-        }
+            
 
-         public void sendMessage(String ip, String message, int port)
-        {
-            Byte[] sendBytes = Encoding.ASCII.GetBytes(message + Environment.MachineName);
-            UdpClient client = new UdpClient(ip, port);
-            client.Send(sendBytes, sendBytes.Length);
         }
 
         public void sendMessage(String ip, byte b)
         {
             Byte[] sendBytes = new Byte[] { b };
             sendBytes.Concat(Encoding.ASCII.GetBytes(Environment.MachineName));
-            UdpClient client = new UdpClient(ip, 4512);
+            UdpClient client = new UdpClient(ip, 4513);
             client.Send(sendBytes, sendBytes.Length);
         }
 
+        public void StartListeningTcp() {
+            Thread tcp = new Thread(
+            new ThreadStart(serverTcp));
+            tcp.Start();
+        }
 
+       
+
+        public void serverTcp() {
+            try
+            {
+                listener = new TcpListener(IPAddress.Any, 4512);
+                listener.Start();
+            }
+            catch (SocketException e) {
+                Console.WriteLine(e.ErrorCode + " " + e.Message);
+                Thread.CurrentThread.Abort();
+            }
+
+
+            try
+            {
+                while (true)
+                {
+                    Console.Write("Waiting for connection...");
+                    TcpClient client = listener.AcceptTcpClient();
+
+                    Console.WriteLine("Connection accepted.");
+                    NetworkStream ns = client.GetStream();
+                    ThreadWithState tws = new ThreadWithState(client, ns, this);
+                    Thread t = new Thread(new ThreadStart(tws.manageConnection));
+                    t.Start();
+
+
+                }
+            }
+            catch (ThreadAbortException e)
+            {
+                listener.Stop();
+            }
+            catch (SocketException ignore) {
+            }
+        }
+
+        public class ThreadWithState {
+            private TcpClient client = null;
+            private NetworkStream netStream = null;
+            private ServerC server;
+
+            public ThreadWithState(TcpClient client, NetworkStream netStream, ServerC server)
+            {
+                this.client = client;
+                this.netStream = netStream;
+                this.server = server;
+            }
+
+            public void manageConnection()
+            {
+                byte[] rcvBuffer = new byte[1024];
+                int bytesRcvd;
+                //se 0 allora ha chiuso la connessione
+                try
+                {
+                    while (Thread.CurrentThread.IsAlive) {
+                        bytesRcvd=netStream.Read(rcvBuffer, 0, rcvBuffer.Length);
+                        if (bytesRcvd > 0)
+                        {
+                            if ((rcvBuffer[0] == CONNECTION || rcvBuffer[0] == CONNECTION_PASSWORD) && !server.connected)
+                            {
+
+                                if (rcvBuffer[0] == CONNECTION_PASSWORD)
+                                {
+                                    if (!server.usingPassword)
+                                    {
+                                        netStream.Write(new byte[] { CONNECTION_ERROR }, 0, 1);
+                                    }
+                                    else
+                                    {
+                                        ICryptoTransform decryptor = server.crypto.CreateDecryptor(server.crypto.Key, server.crypto.IV);
+                                        var origValue = decryptor.TransformFinalBlock(rcvBuffer, 1, bytesRcvd - 1);
+                                        if (server.base64Key.Equals(Encoding.ASCII.GetString(origValue).Split(':')[1]))
+                                        {
+                                            var remoteEndPoint = client.Client.RemoteEndPoint as IPEndPoint;
+
+                                            server.connectedIp = remoteEndPoint.Address.ToString(); 
+                                            server.connected = true;
+                                            server.clientTcp = client;
+                                            server.netStream = netStream;
+                                            netStream.Write(new byte[] { CONNECTED_PASSWORD }, 0, 1);
+
+                                        }
+                                        else
+                                        {
+                                            netStream.Write(new byte[] { WRONG_PASSWORD }, 0, 1);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    if (server.usingPassword)
+                                    {
+                                        netStream.Write(new byte[] { REQUIRE_PASSWORD }, 0, 1);
+                                    }
+                                    else
+                                    {
+                                        var remoteEndPoint = client.Client.RemoteEndPoint as IPEndPoint;
+
+                                        server.connectedIp = remoteEndPoint.Address.ToString();//RemoteIp.Address.ToString();
+
+                                        server.clientTcp = client;
+                                        server.netStream = netStream;
+                                        server.connected = true;
+                                        netStream.Write(new byte[] { CONNECTED }, 0, 1);
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            netStream.Close();
+                            client.Close();
+                            server.connectedIp = null;
+                            server.connected = false;
+                            Thread.CurrentThread.Abort();
+                        }
+                    }
+                }
+                catch (IOException e) {
+                    Console.WriteLine(e.Message);
+                    netStream.Close();
+                    client.Close();
+                    server.connectedIp = null;
+                    server.connected = false;
+                    Thread.CurrentThread.Abort();
+                }
+            }
+        }
     }
+
+
+    
 }
 
 
