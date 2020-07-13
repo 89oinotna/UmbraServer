@@ -76,8 +76,11 @@ namespace Server
             connected = false;
             started = false;
             connectedIp = null;
-            netStream.Close();
-            clientTcp.Close();
+            if (netStream != null)
+            {
+                netStream.Close();
+                clientTcp.Close();
+            }
         }
 
         public void StartListeningUdp() {
@@ -266,21 +269,28 @@ namespace Server
                                     }
                                     else
                                     {
-                                        ICryptoTransform decryptor = server.crypto.CreateDecryptor(server.crypto.Key, server.crypto.IV);
-                                        var origValue = decryptor.TransformFinalBlock(rcvBuffer, 1, bytesRcvd - 1);
-                                        if (server.base64Key.Equals(Encoding.ASCII.GetString(origValue).Split(':')[1]))
+                                        try
                                         {
-                                            var remoteEndPoint = client.Client.RemoteEndPoint as IPEndPoint;
+                                            ICryptoTransform decryptor = server.crypto.CreateDecryptor(server.crypto.Key, server.crypto.IV);
+                                            var origValue = decryptor.TransformFinalBlock(rcvBuffer, 1, bytesRcvd - 1);
+                                            if (server.base64Key.Equals(Encoding.ASCII.GetString(origValue).Split(':')[1]))
+                                            {
+                                                var remoteEndPoint = client.Client.RemoteEndPoint as IPEndPoint;
 
-                                            server.connectedIp = remoteEndPoint.Address.ToString(); 
-                                            server.connected = true;
-                                            server.clientTcp = client;
-                                            server.netStream = netStream;
-                                            netStream.Write(new byte[] { CONNECTED_PASSWORD }, 0, 1);
+                                                server.connectedIp = remoteEndPoint.Address.ToString();
+                                                server.connected = true;
 
-                                        }
-                                        else
-                                        {
+                                                server.clientTcp = client;
+
+                                                server.netStream = netStream;
+                                                netStream.Write(new byte[] { CONNECTED_PASSWORD }, 0, 1);
+
+                                            }
+                                            else
+                                            {
+                                                netStream.Write(new byte[] { WRONG_PASSWORD }, 0, 1);
+                                            }
+                                        } catch (Exception e) {
                                             netStream.Write(new byte[] { WRONG_PASSWORD }, 0, 1);
                                         }
                                     }

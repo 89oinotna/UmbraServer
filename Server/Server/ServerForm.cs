@@ -99,6 +99,7 @@ namespace Server
             s.usePassword(keyGenerated, Convert.ToBase64String(keyGenerated));
         }
 
+
         private void ServerForm_Load(object sender, EventArgs e)
         {
             RegistryKey rk = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
@@ -141,6 +142,8 @@ namespace Server
                 usePassword = true;
             }
         }
+
+        
 
 
         public static string EncryptString(SecureString input)
@@ -206,6 +209,13 @@ namespace Server
                 Properties.Settings.Default.use_password = false;
                 Properties.Settings.Default.Save();
             }
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            base.OnClosing(e);
+            if(s!=null)
+                s.close();
         }
     }
 }
