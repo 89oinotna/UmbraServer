@@ -96,7 +96,8 @@ namespace Server
             Properties.Settings.Default.Save();
             k = keyGenerated;
             base64k = Convert.ToBase64String(keyGenerated);
-            s.usePassword(keyGenerated, Convert.ToBase64String(keyGenerated));
+            if(s!=null)
+                s.usePassword(keyGenerated, Convert.ToBase64String(keyGenerated));
         }
 
 
