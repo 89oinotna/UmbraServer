@@ -53,9 +53,9 @@
             // 
             this.btn_new_password.Location = new System.Drawing.Point(16, 115);
             this.btn_new_password.Name = "btn_new_password";
-            this.btn_new_password.Size = new System.Drawing.Size(40, 20);
+            this.btn_new_password.Size = new System.Drawing.Size(83, 20);
             this.btn_new_password.TabIndex = 4;
-            this.btn_new_password.Text = "New";
+            this.btn_new_password.Text = "NewPassword";
             this.btn_new_password.UseVisualStyleBackColor = true;
             this.btn_new_password.Click += new System.EventHandler(this.btn_new_password_Click);
             // 

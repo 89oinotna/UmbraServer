@@ -13,47 +13,39 @@ using ZXing.Common;
 using ZXing.QrCode;
 using System.Security.Cryptography;
 using Microsoft.Win32;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace Server
 {
     public partial class ServerForm : Form
     {
-        ServerC s;
-        private byte[] k;
-        private string base64k;
+        ServerC s = new ServerC();
         private bool usePassword;
         public ServerForm()
         {
-            InitializeComponent(); 
+            InitializeComponent();
         }
 
         private void btn_start_Click(object sender, EventArgs e)
         {
-            if (s != null && s.Started) {
+            changeState();
+        }
+
+        private void changeState(){
+            
+            if (s.Running)
+            {
+                //close
                 s.close();
                 btn_start.Text = "Start";
             }
-            else if(s!=null && !s.Started){
-                s = new ServerC();
-                if (k != null && usePassword) {
-                    s.usePassword(k, base64k);
-                }
-                s.StartListeningUdp();
-                s.StartListeningTcp();
-                btn_start.Text = "Stop";
-            }
-            else if (s == null || !s.Started) {
-                s = new ServerC();
-                if (k != null && usePassword)
-                {
-                    s.usePassword(k, base64k);
-                }
-                s.StartListeningUdp();
-                s.StartListeningTcp();
+            else {
+                //start
+                s.start();
                 btn_start.Text = "Stop";
             }
         }
-
+        
         private void ckb_auto_startup_CheckedChanged(object sender, EventArgs e)
         {
             RegistryKey rk = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
@@ -70,15 +62,36 @@ namespace Server
             }
         }
 
-        private void btn_new_password_Click(object sender, EventArgs e)
-        {
-            System.Security.Cryptography.AesCryptoServiceProvider crypto = new System.Security.Cryptography.AesCryptoServiceProvider();
-            crypto.KeySize = 128;
-            crypto.BlockSize = 128;
-            crypto.GenerateKey();
-            byte[] keyGenerated = crypto.Key;
+        private void btn_new_password_Click(object sender, EventArgs e) {
+            if (s.Running)
+            {
+                string message = "The server will shutdown, continue?";
+                string caption = "Warning";
+                MessageBoxButtons buttons = MessageBoxButtons.YesNo;
+                DialogResult result;
+
+                result = MessageBox.Show(message, caption, buttons);
+                if (result == System.Windows.Forms.DialogResult.No)
+                {
+                    return;
+                }
+                else
+                {
+                    changeState();
+                }
+            }
+            byte[] keyGenerated = s.generateKey();
+            
+            pbox_qrcode.Image = buildQR(keyGenerated);
+
+            Properties.Settings.Default.password = s.encryptedPassword();
+               
+            Properties.Settings.Default.Save();
+        }
+
+        private Bitmap buildQR(byte[] keyGenerated) {
             QRCodeWriter qrWriter = new QRCodeWriter();
-            int width=200;
+            int width = 200;
             int height = 200;
             BitMatrix matrix = qrWriter.encode(Convert.ToBase64String(keyGenerated), BarcodeFormat.QR_CODE, 200, 200);
             Bitmap bmp = new Bitmap(width, height);
@@ -90,16 +103,8 @@ namespace Server
                     bmp.SetPixel(x, y, pixel);
                 }
             }
-            pbox_qrcode.Image = bmp;
-
-            Properties.Settings.Default.password = EncryptString(ToSecureString(Convert.ToBase64String(keyGenerated)));
-            Properties.Settings.Default.Save();
-            k = keyGenerated;
-            base64k = Convert.ToBase64String(keyGenerated);
-            if(s!=null)
-                s.usePassword(keyGenerated, Convert.ToBase64String(keyGenerated));
+            return bmp;
         }
-
 
         private void ServerForm_Load(object sender, EventArgs e)
         {
@@ -114,8 +119,9 @@ namespace Server
             }
             if (Properties.Settings.Default.password != string.Empty)
             {
-                SecureString password = DecryptString(Properties.Settings.Default.password);
-                string readable = ToInsecureString(password);
+                //SecureString password = DecryptString(Properties.Settings.Default.password);
+                //string readable = ToInsecureString(password);
+                string readable=s.readKey(Properties.Settings.Default.password);
                 QRCodeWriter qrWriter = new QRCodeWriter();
                 int width = 200;
                 int height = 200;
@@ -130,93 +136,54 @@ namespace Server
                     }
                 }
                 pbox_qrcode.Image = bmp;
-                k = Convert.FromBase64String(readable);
-                base64k = readable;
             }
             if (Properties.Settings.Default.use_password == false)
             {
                 rb_off.Checked = true;
-                usePassword = false;
+                s.usePassword( false);
             }
             else {
                 rb_on.Checked = true;
-                usePassword = true;
+                s.usePassword(true);
             }
-        }
-
-        
-
-
-        public static string EncryptString(SecureString input)
-        {
-            byte[] encryptedData = ProtectedData.Protect(Encoding.Unicode.GetBytes(ToInsecureString(input)), new byte[1], DataProtectionScope.CurrentUser);
-            return Convert.ToBase64String(encryptedData);
-        }
-
-        public static SecureString DecryptString(string encryptedData)
-        {
-            try
-            {
-                byte[] decryptedData = ProtectedData.Unprotect(Convert.FromBase64String(encryptedData), new byte[1], DataProtectionScope.CurrentUser);
-                return ToSecureString(Encoding.Unicode.GetString(decryptedData));
-            }
-            catch
-            {
-                return new SecureString();
-            }
-        }
-
-        public static SecureString ToSecureString(string input)
-        {
-            SecureString secure = new SecureString();
-            foreach (char c in input)
-            {
-                secure.AppendChar(c);
-            }
-            secure.MakeReadOnly();
-            return secure;
-        }
-
-        public static string ToInsecureString(SecureString input)
-        {
-            string returnValue = string.Empty;
-            IntPtr ptr = System.Runtime.InteropServices.Marshal.SecureStringToBSTR(input);
-            try
-            {
-                returnValue = System.Runtime.InteropServices.Marshal.PtrToStringBSTR(ptr);
-            }
-            finally
-            {
-                System.Runtime.InteropServices.Marshal.ZeroFreeBSTR(ptr);
-            }
-            return returnValue;
-        }
-
-        private void groupBox1_Enter(object sender, EventArgs e)
-        {
-
         }
 
         private void rb_on_CheckedChanged(object sender, EventArgs e)
         {
+            if (s.Running)
+            {
+                string message = "The server will shutdown, continue?";
+                string caption = "Warning";
+                MessageBoxButtons buttons = MessageBoxButtons.YesNo;
+                DialogResult result;
+
+                result = MessageBox.Show(message, caption, buttons);
+                if (result == System.Windows.Forms.DialogResult.No)
+                {
+                    return;
+                }
+                else {
+                    changeState();
+                }
+            }
             if (rb_on.Checked)
             {
-                usePassword = true;
+                s.usePassword(true);
                 Properties.Settings.Default.use_password = true;
                 Properties.Settings.Default.Save();
             }
             else {
-                usePassword = false;
+                s.usePassword(false);
                 Properties.Settings.Default.use_password = false;
                 Properties.Settings.Default.Save();
             }
+            
         }
 
         protected override void OnClosing(CancelEventArgs e)
         {
             base.OnClosing(e);
-            if(s!=null)
-                s.close();
+            if(s.Running)s.close();
         }
     }
 }
