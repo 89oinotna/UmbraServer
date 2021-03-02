@@ -20,7 +20,6 @@ namespace Server
     public partial class ServerForm : Form
     {
         ServerC s = new ServerC();
-        private bool usePassword;
         public ServerForm()
         {
             InitializeComponent();
