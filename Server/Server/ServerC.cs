@@ -46,7 +46,7 @@ namespace Server
         private NetworkStream netStream = null;
         private IPEndPoint RemoteIp = new IPEndPoint(IPAddress.Any, 0);
 
-        Mouse mouse = new Mouse();
+        
 
         private static byte BROADCAST = 0x00;
         private static byte ALIVE = 0x01;
@@ -95,6 +95,7 @@ namespace Server
         }    
 
         public void start() {
+            
             running = true;
             serverUdp = new UdpClient(4513);
             StartListeningUdp();
@@ -133,6 +134,7 @@ namespace Server
             try {
                 //broadcast
                 if (received[0] == BROADCAST) {
+                    //Keyboard.SendKeyUp(0);
                     //TODO: if connected check if client is active
                     Console.WriteLine(RemoteIp.Address.ToString());
                     sendAlive();
@@ -143,14 +145,14 @@ namespace Server
                     {
                         ICryptoTransform decryptor = crypto.CreateDecryptor(crypto.Key, crypto.IV);
                         var origValue = decryptor.TransformFinalBlock(received, 1, received.Length - 1);
-                        mouse.mouseControl(origValue);
+                        InputDispatcher.dispatch(origValue);
 
                     }
                     else if (!usingPassword && received[0] == CONNECTED)
                     {
                         byte[] destfoo = new byte[received.Length - 1];
                         Array.Copy(received, 1, destfoo, 0, received.Length - 1);
-                        mouse.mouseControl(destfoo);
+                        InputDispatcher.dispatch(destfoo);
                     }
                     else {
                         //TODO: codice errore
@@ -246,7 +248,7 @@ namespace Server
                 //se 0 allora ha chiuso la connessione
                 try
                 {
-                    while (Thread.CurrentThread.IsAlive) {
+                    while (client.Connected) {
                         bytesRcvd=netStream.Read(rcvBuffer, 0, rcvBuffer.Length);
                         if (bytesRcvd > 0)
                         {

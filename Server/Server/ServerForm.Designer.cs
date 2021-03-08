@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ServerForm));
             this.btn_start = new System.Windows.Forms.Button();
             this.btn_new_password = new System.Windows.Forms.Button();
             this.ckb_auto_startup = new System.Windows.Forms.CheckBox();
@@ -47,7 +48,7 @@
             this.btn_start.TabIndex = 1;
             this.btn_start.Text = "Start";
             this.btn_start.UseVisualStyleBackColor = true;
-            this.btn_start.Click += new System.EventHandler(this.btn_start_Click);
+            this.btn_start.Click += new System.EventHandler(this.Btn_start_Click);
             // 
             // btn_new_password
             // 
@@ -57,7 +58,7 @@
             this.btn_new_password.TabIndex = 4;
             this.btn_new_password.Text = "NewPassword";
             this.btn_new_password.UseVisualStyleBackColor = true;
-            this.btn_new_password.Click += new System.EventHandler(this.btn_new_password_Click);
+            this.btn_new_password.Click += new System.EventHandler(this.Btn_new_password_Click);
             // 
             // ckb_auto_startup
             // 
@@ -68,7 +69,7 @@
             this.ckb_auto_startup.TabIndex = 5;
             this.ckb_auto_startup.Text = "Start Up";
             this.ckb_auto_startup.UseVisualStyleBackColor = true;
-            this.ckb_auto_startup.CheckedChanged += new System.EventHandler(this.ckb_auto_startup_CheckedChanged);
+            this.ckb_auto_startup.CheckedChanged += new System.EventHandler(this.Ckb_auto_startup_CheckedChanged);
             // 
             // pbox_qrcode
             // 
@@ -111,7 +112,7 @@
             this.rb_on.TabStop = true;
             this.rb_on.Text = "on";
             this.rb_on.UseVisualStyleBackColor = true;
-            this.rb_on.CheckedChanged += new System.EventHandler(this.rb_on_CheckedChanged);
+            this.rb_on.CheckedChanged += new System.EventHandler(this.Rb_on_CheckedChanged);
             // 
             // ServerForm
             // 
@@ -123,6 +124,7 @@
             this.Controls.Add(this.ckb_auto_startup);
             this.Controls.Add(this.btn_new_password);
             this.Controls.Add(this.btn_start);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "ServerForm";
             this.Text = "Server";
             this.Load += new System.EventHandler(this.ServerForm_Load);

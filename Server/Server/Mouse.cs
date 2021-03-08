@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
+using System.Buffers.Binary;
 
 
 namespace Server
@@ -38,28 +39,29 @@ namespace Server
         }
 
         
-        public String mouseControl(byte[] received)
+        public static String mouseControl(byte[] received)
         {
-            if (received[0] == LEFT_DOWN) {
+            int action = BinaryPrimitives.ReadInt32BigEndian(new Span<byte>(received, 1, 4));
+            if (action == LEFT_DOWN) {
                 mouse_event((int)MouseEventFlagsAPI.LEFTDOWN, 0, 0, 0, 0);
             }
-            else if (received[0] == LEFT_UP) {
+            else if (action == LEFT_UP) {
                 mouse_event((int)MouseEventFlagsAPI.LEFTUP, 0, 0, 0, 0);
             }
-            else if (received[0] == RIGHT_DOWN){
+            else if (action == RIGHT_DOWN){
                 mouse_event((int)MouseEventFlagsAPI.RIGHTDOWN, 0, 0, 0, 0);
             }
-            else if (received[0] == RIGHT_UP){
+            else if (action == RIGHT_UP){
                 mouse_event((int)MouseEventFlagsAPI.RIGHTUP, 0, 0, 0, 0);
             }
-            else if (received[0] == WHEEL_MOVE){
+            else if (action == WHEEL_MOVE){
                 String data = Encoding.UTF8.GetString(received);
                 String[] delta = data.Split(':', ',');
                 //Console.WriteLine(deltaX);
                 int y = int.Parse(delta[2]);
                 mouse_event((int)MouseEventFlagsAPI.WHEEL, 0, 0, y, 0);
             }
-            else if (received[0] == PAD_MOVE){
+            else if (action == PAD_MOVE){
                 // calculate delta
                 String data = Encoding.UTF8.GetString(received);
                 String[] delta = data.Split(':', ',' );
@@ -72,7 +74,7 @@ namespace Server
                 Cursor.Position = new Point(Cursor.Position.X + deltaX, Cursor.Position.Y + deltaY);
 
             }
-            else if (received[0] == SENSOR_MOVE){
+            else if (action == SENSOR_MOVE){
                 String data = Encoding.UTF8.GetString(received);
                 String[] delta = data.Split(':', ',');
                 //Console.WriteLine(data);

@@ -25,12 +25,12 @@ namespace Server
             InitializeComponent();
         }
 
-        private void btn_start_Click(object sender, EventArgs e)
+        private void Btn_start_Click(object sender, EventArgs e)
         {
-            changeState();
+            ChangeState();
         }
 
-        private void changeState(){
+        private void ChangeState(){
             
             if (s.Running)
             {
@@ -45,7 +45,7 @@ namespace Server
             }
         }
         
-        private void ckb_auto_startup_CheckedChanged(object sender, EventArgs e)
+        private void Ckb_auto_startup_CheckedChanged(object sender, EventArgs e)
         {
             RegistryKey rk = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
             string path = rk.GetValue("mouseserver", "null").ToString();
@@ -61,7 +61,7 @@ namespace Server
             }
         }
 
-        private void btn_new_password_Click(object sender, EventArgs e) {
+        private void Btn_new_password_Click(object sender, EventArgs e) {
             if (s.Running)
             {
                 string message = "The server will shutdown, continue?";
@@ -76,19 +76,24 @@ namespace Server
                 }
                 else
                 {
-                    changeState();
+                    ChangeState();
                 }
             }
-            byte[] keyGenerated = s.generateKey();
+            NewPassword();
             
-            pbox_qrcode.Image = buildQR(keyGenerated);
+        }
+
+        private void NewPassword() {
+            byte[] keyGenerated = s.generateKey();
+
+            pbox_qrcode.Image = BuildQR(keyGenerated);
 
             Properties.Settings.Default.password = s.encryptedPassword();
-               
+
             Properties.Settings.Default.Save();
         }
 
-        private Bitmap buildQR(byte[] keyGenerated) {
+        private Bitmap BuildQR(byte[] keyGenerated) {
             QRCodeWriter qrWriter = new QRCodeWriter();
             int width = 200;
             int height = 200;
@@ -120,7 +125,7 @@ namespace Server
             {
                 //SecureString password = DecryptString(Properties.Settings.Default.password);
                 //string readable = ToInsecureString(password);
-                string readable=s.readKey(Properties.Settings.Default.password);
+                string readable = s.readKey(Properties.Settings.Default.password);
                 QRCodeWriter qrWriter = new QRCodeWriter();
                 int width = 200;
                 int height = 200;
@@ -136,6 +141,9 @@ namespace Server
                 }
                 pbox_qrcode.Image = bmp;
             }
+            else {
+                NewPassword();
+            }
             if (Properties.Settings.Default.use_password == false)
             {
                 rb_off.Checked = true;
@@ -147,7 +155,7 @@ namespace Server
             }
         }
 
-        private void rb_on_CheckedChanged(object sender, EventArgs e)
+        private void Rb_on_CheckedChanged(object sender, EventArgs e)
         {
             if (s.Running)
             {
@@ -162,7 +170,7 @@ namespace Server
                     return;
                 }
                 else {
-                    changeState();
+                    ChangeState();
                 }
             }
             if (rb_on.Checked)

@@ -35,3 +35,7 @@ E:\Users\antonio\Desktop\mouse\MouseServer(Windows)\Server\Server\bin\Debug\zxin
 E:\Users\antonio\Desktop\mouse\MouseServer(Windows)\Server\Server\obj\Debug\Server.csproj.CopyComplete
 E:\Users\antonio\Desktop\mouse\MouseServer(Windows)\Server\Server\obj\Debug\Server.exe
 E:\Users\antonio\Desktop\mouse\MouseServer(Windows)\Server\Server\obj\Debug\Server.pdb
+E:\Users\antonio\Desktop\mouse\MouseServer(Windows)\Server\Server\bin\Debug\System.Memory.dll
+E:\Users\antonio\Desktop\mouse\MouseServer(Windows)\Server\Server\bin\Debug\System.Numerics.Vectors.dll
+E:\Users\antonio\Desktop\mouse\MouseServer(Windows)\Server\Server\bin\Debug\System.Runtime.CompilerServices.Unsafe.dll
+E:\Users\antonio\Desktop\mouse\MouseServer(Windows)\Server\Server\bin\Debug\System.Buffers.dll
