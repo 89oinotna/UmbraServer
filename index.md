@@ -6,15 +6,15 @@ The app requires the server running on your pc.
 
 ## Features
 
-####Mouse:
+#### Mouse:
 - Movement and click
 - Wheel scroll
 - Tap to click
 - Move with gyroscope
 
-####Keyboard
+#### Keyboard
 - Qwerty keyboard
 
 ## Server Download
 
-[Link](url) and ![Image](src)
+[Link](https://github.com/89oinotna/UmbraServer/releases) 
